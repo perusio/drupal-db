@@ -36,7 +36,7 @@
 
       This command receives an optional argument that is the base
       directory of a drupal install. It defaults to the current
-      eorking directory.
+      working directory.
 
       Example: =drupal-db-backup= issued in a drupal root directory
       creates a gzipped tarball of the database with *database name*,

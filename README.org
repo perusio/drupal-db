@@ -1,0 +1,52 @@
+* Shell Scripts for working with MySQL databases in Drupal
+
+** The commands
+
+   This repository contains a set of shell scripts to work with MySQL
+   databases in Drupal.
+
+   The script presuppose a working Linux/OS X/*nix environemnt with a
+   proper shell. It is written with bash in mind. I haven't tested it
+   in other environments.
+
+   1. =drupal-db-create= creates a drupal database given the
+      *database name*, *username*, *database password* and optionally
+      a *hostname*. Example: 
+      
+      =drupal-db-create -d my_drupalDB -u duser -p dpass= creates a
+      database named *my_drupalDB* with username *duser* and password
+      *dpass*.
+      
+      Note that it's a *security loophole* to invoke the script like
+      this. The database credentials are stored in your shell
+      history. Anyone with access to it can parse the credentials and
+      connect to the database.
+
+      My suggestion is to create an alias and give there the "usual"
+      drupal user and password (in case you have one -- yes I do and
+      yes I'm lazy). Then do a =chmod 600 ~/.alias= to guarantee that
+      only you can read the aliases file. I'm assuming here that your
+      aliases file is called =.alias=. If not so change the command
+      accordingly.
+
+   2. =drupal-db-backup= creates a dump of a Drupal database
+      compressed with gzip. For multisites installs it parses each
+      =settings.php= file in order to get the database connection
+      string.
+
+      This command receives an optional argument that is the base
+      directory of a drupal install. It defaults to the current
+      eorking directory.
+
+      Example: =drupal-db-backup= issued in a drupal root directory
+      creates a gzipped tarball of the database with *database name*,
+      *host name* and a *timestamp* of the dumped database in the file
+      name.
+
+
+** In loci of a warning
+
+   These scripts do the work for me. You shouldn't use them if you
+   don't grasp the basics of working with databases in Drupal. The
+   database is a *critical* component in a Drupal site. Messing with
+   it is not for the faint of heart. You've been *warned*. 

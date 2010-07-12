@@ -1,0 +1,96 @@
+#!/bin/sh
+
+## This script creates a database for drupal to use.
+
+# drupal-db-create --- 
+
+# Copyright (C) 2010 António P. P. Almeida <appa@perusio.net>
+
+# Author: António P. P. Almeida <appa@perusio.net>
+
+# Permission is hereby granted, free of charge, to any person obtaining a
+# copy of this software and associated documentation files (the "Software"),
+# to deal in the Software without restriction, including without limitation
+# the rights to use, copy, modify, merge, publish, distribute, sublicense,
+# and/or sell copies of the Software, and to permit persons to whom the
+# Software is furnished to do so, subject to the following conditions:
+
+# The above copyright notice and this permission notice shall be included in
+# all copies or substantial portions of the Software.
+
+# Except as contained in this notice, the name(s) of the above copyright
+# holders shall not be used in advertising or otherwise to promote the sale,
+# use or other dealings in this Software without prior written authorization.
+
+# THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+# IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+# FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT.  IN NO EVENT SHALL
+# THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+# LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING
+# FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER
+# DEALINGS IN THE SOFTWARE.
+
+
+## The username that has privileges to create a database. Usually it's
+## called root. Change it to whatever name your privileged user has.
+PRIVILEGED_USER='root'
+
+## The privileged user password. Carefull: this is a security
+## hazard. If you must you can provide -- which doesn't mean you
+## should, quite the opposite -- the privileged user password. But I
+## advise you to instead leave it as it is and enter the password
+## manually.
+PRIVILEGED_USER_PASS=""
+
+## The mysql command line application.
+MYSQL_CLI=`which mysql`
+[ -x $MYSQL_CLI ] || exit 0
+
+## Usage help.
+print_usage () {
+    echo "Usage: ${0##*/} -d <database name> -u <username> -p <password> [-h <host>]"
+}
+
+## Check the number of arguments.
+if [ $# -lt 6 ]; then
+    print_usage
+    exit 1
+fi
+
+## The database host is localhost by default.
+DB_HOST="localhost"
+
+## Getting all the options.
+while getopts :d:h:u:p: OPT; do
+    case $OPT in
+        d|+d)
+            DB_NAME="$OPTARG"
+            ;;
+        h|+h)
+            DB_HOST="$OPTARG"
+            ;;
+        u|+u)
+            DB_USER="$OPTARG"
+            ;;
+        p|+p)
+            DB_PASS="$OPTARG"
+            ;;
+        *)
+            print_usage
+            exit 2
+    esac
+done
+shift $(( OPTIND - 1 ))
+OPTIND=1
+
+
+## Run the command to create the database.
+$MYSQL_CLI -u$PRIVILEGED_USER -p$PRIVILEGED_USER_PASS -h $DB_HOST -e "CREATE DATABASE $DB_NAME;" && echo "$DB_NAME created."
+
+
+## The set of default DB privileges for Drupal.
+DB_PRIVS="SELECT, INSERT, UPDATE, DELETE, CREATE, DROP, INDEX, ALTER, CREATE TEMPORARY TABLES"
+
+
+## Granting the privileges and creating the user if it doesn't exist.
+$MYSQL_CLI -u$PRIVILEGED_USER -p$PRIVILEGED_USER_PASS -h $DB_HOST -e "GRANT $DB_PRIVS ON $DB_NAME.* TO '$DB_USER'@'$DB_HOST' IDENTIFIED BY '$DB_PASS'; FLUSH PRIVILEGES;" && echo "$DB_USER granted $DB_PRIVS on $DB_NAME"

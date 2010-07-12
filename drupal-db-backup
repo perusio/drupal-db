@@ -1,0 +1,124 @@
+#!/bin/sh
+#
+# drupal-db-backup: A shell script for backing up a drupal DB.
+#
+# This script is based on the script available at http://drupal.org/node/129202.
+
+# The script receives one argument that is the name of the drupal
+# directory. If not given it uses the current directory.
+
+# drupal-db-backup --- 
+
+# Copyright (C) 2010 António P. P. Almeida <appa@perusio.net>
+
+# Author: António P. P. Almeida <appa@perusio.net>
+
+# Permission is hereby granted, free of charge, to any person obtaining a
+# copy of this software and associated documentation files (the "Software"),
+# to deal in the Software without restriction, including without limitation
+# the rights to use, copy, modify, merge, publish, distribute, sublicense,
+# and/or sell copies of the Software, and to permit persons to whom the
+# Software is furnished to do so, subject to the following conditions:
+
+# The above copyright notice and this permission notice shall be included in
+# all copies or substantial portions of the Software.
+
+# Except as contained in this notice, the name(s) of the above copyright
+# holders shall not be used in advertising or otherwise to promote the sale,
+# use or other dealings in this Software without prior written authorization.
+
+# THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+# IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+# FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT.  IN NO EVENT SHALL
+# THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+# LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING
+# FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER
+# DEALINGS IN THE SOFTWARE.
+
+## The script name.
+SCRIPTNAME=`basename $0`
+
+## Getting the Drupal root dir.
+if [ $# -lt 1 ]; then
+  DRUPAL_DIR=`pwd`
+elif [ $# -gt 1 ]; then
+  echo "Usage: $SCRIPTNAME [drupal directory]" 
+else
+  DD=`dirname $1`  # the base directory name
+  DF=`basename $1` # the Drupal directory name
+  DRUPAL_DIR=$DD/$DF 
+fi
+
+## Do a DB dump using mysqldump.
+# Finding the mysqldump utility.
+  MYSQLDUMP=`which mysqldump`
+  [ -x $MYSQLDUMP ] || exit 0
+
+for i in `find $DRUPAL_DIR -name "settings.php" -printf "%P "`; do
+
+  ## Scanning the Drupal config file for the DB connection settings.
+  DVARS=`sed -n "s/^[ ]*[$].*\('mysql.*\);/\<?= urldecode\(\1\)?\>/p"\
+         $i | php | awk '{split($0, b, "//")
+      split(b[2], c, ":")
+      user = c[1]
+      split(c[2], d, "/")
+      db = d[2]
+      split(d[1], e, "@") 
+      pass= e[1]; host = e[2]
+      print user" "db" "pass" "host}'`
+
+
+  ## Getting the DB variables.
+  DBUSER=`echo  $DVARS | awk '{print $1}'` # DBNAME - The DB name.
+  DBNAME=`echo  $DVARS | awk '{print $2}'` # DBPASS - The DB password.
+  DBPASS=`echo  $DVARS | awk '{print $3}'` # DBUSER - The DB user.
+  DBHOST=`echo  $DVARS | awk '{print $4}'` # DBHOST - The DB host.
+
+  ## Get the hostname if not given in the DB connect string.
+  if [ $DBHOST = "localhost" ]; then 
+    DBHOSTNAME=`hostname -f`
+  else
+    DBHOSTNAME=$DBHOST
+  fi
+
+  ## The tar output filename.
+  DATESTAMP=`date +'%Y-%b-%d-%H%M%S'`
+
+  ## Temporary directory.
+  TMPDIR="/tmp/DRUPAL_DB_BACKUP$$_$DATESTAMP"
+
+  ## Creating the temporary directory if doesn't exist.
+  mkdir -p $TMPDIR
+
+  ## Do a DB dump using mysqldump.
+  # Finding the mysqldump utility.
+  MYSQLDUMP=`which mysqldump`
+  [ -x $MYSQLDUMP ] || exit 0
+
+
+  # The dump filename.
+  DBDUMP_PREFIX="dump"
+  DBDUMPNAME=$DBDUMP_PREFIX-$DBHOSTNAME-$DBNAME-$DATESTAMP.sql
+
+  # Effecting the data dump.
+  echo "Dumping Drupal database '$DBNAME'"
+  echo "with '$DBUSER' on host '$DBHOST'"
+  cd $TMPDIR 
+  $MYSQLDUMP -v -h $DBHOST -u $DBUSER -p$DBPASS --add-drop-table $DBNAME > $DBDUMPNAME
+
+  ## Create the final backup file.
+  echo "Creating final compressed archive: $DBDUMPNAME.gz"
+  gzip $DBDUMPNAME
+
+  ## Moving the archive to the Drupal root.
+  mv $DBDUMPNAME.gz $DRUPAL_DIR
+  cd $DRUPAL_DIR
+
+  NOW=`date`
+  echo "$NOW: Drupal DB backup in $DBNAME.gz"
+done
+
+
+## Deleting the temporary directory.
+rm -fr $TMPDIR
+

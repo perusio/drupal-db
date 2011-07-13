@@ -1,8 +1,6 @@
-#!/bin/sh
+#!/bin/bash
 
-## This script creates a database for drupal to use.
-
-# drupal-db-create --- 
+# drupal-db-create --- This script creates a database for drupal to use.
 
 # Copyright (C) 2010 António P. P. Almeida <appa@perusio.net>
 
@@ -43,7 +41,7 @@ PRIVILEGED_USER='root'
 PRIVILEGED_USER_PASS=""
 
 ## The mysql command line application.
-MYSQL_CLI=`which mysql`
+MYSQL_CLI=$(which mysql)
 [ -x $MYSQL_CLI ] || exit 0
 
 ## Usage help.
@@ -83,14 +81,11 @@ done
 shift $(( OPTIND - 1 ))
 OPTIND=1
 
-
-## Run the command to create the database.
-$MYSQL_CLI -u$PRIVILEGED_USER -p$PRIVILEGED_USER_PASS -h $DB_HOST -e "CREATE DATABASE $DB_NAME;" && echo "$DB_NAME created."
-
-
 ## The set of default DB privileges for Drupal.
 DB_PRIVS="SELECT, INSERT, UPDATE, DELETE, CREATE, DROP, INDEX, ALTER, CREATE TEMPORARY TABLES, LOCK TABLES"
 
+## Run the command to create the database.
+$MYSQL_CLI -u$PRIVILEGED_USER -p$PRIVILEGED_USER_PASS -h $DB_HOST -e "CREATE DATABASE $DB_NAME; GRANT $DB_PRIVS ON $DB_NAME.* TO '$DB_USER'@'$DB_HOST' IDENTIFIED BY '$DB_PASS; FLUSH PRIVILEGES;'"
 
-## Granting the privileges and creating the user if it doesn't exist.
-$MYSQL_CLI -u$PRIVILEGED_USER -p$PRIVILEGED_USER_PASS -h $DB_HOST -e "GRANT $DB_PRIVS ON $DB_NAME.* TO '$DB_USER'@'$DB_HOST' IDENTIFIED BY '$DB_PASS'; FLUSH PRIVILEGES;" && echo "$DB_USER granted $DB_PRIVS on $DB_NAME"
+## Signal the result.
+[ $? ] && echo "$DB_NAME created with $DB_USER granted $DB_PRIVS on $DB_NAME."

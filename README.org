@@ -11,12 +11,12 @@
 
    1. =drupal-db-create= creates a drupal database given the
       *database name*, *username*, *database password* and optionally
-      a *hostname*. Example: 
-      
+      a *hostname*. Example:
+
       =drupal-db-create -d my_drupalDB -u duser -p dpass= creates a
       database named *my_drupalDB* with username *duser* and password
       *dpass*.
-      
+
       Note that it's a *security loophole* to invoke the script like
       this. The database credentials are stored in your shell
       history. Anyone with access to it can parse the credentials and
@@ -43,10 +43,11 @@
       *host name* and a *timestamp* of the dumped database in the file
       name.
 
+      Note that the backup only works with **drupal 6**.
 
 ** In loci of a warning
 
    These scripts do the work for me. You shouldn't use them if you
    don't grasp the basics of working with databases in Drupal. The
    database is a *critical* component in a Drupal site. Messing with
-   it is not for the faint of heart. You've been *warned*. 
+   it is not for the faint of heart. You've been *warned*.

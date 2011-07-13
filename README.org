@@ -43,7 +43,7 @@
       *host name* and a *timestamp* of the dumped database in the file
       name.
 
-      Note that the backup only works with **drupal 6**.
+      Note that the backup only works with *drupal 6*.
 
 ** In loci of a warning
 
